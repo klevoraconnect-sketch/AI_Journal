@@ -5,7 +5,7 @@ import 'config/supabase_config.dart';
 import 'config/theme_config.dart';
 import 'features/auth/logic/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/journal/ui/timeline_screen.dart';
+import 'features/navigation/ui/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +50,7 @@ class AuthWrapper extends ConsumerWidget {
     }
 
     if (authState.user != null) {
-      return const TimelineScreen();
+      return const MainScreen();
     }
 
     return const LoginScreen();

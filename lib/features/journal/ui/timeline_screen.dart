@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../logic/journal_provider.dart';
 import '../models/journal_entry.dart';
 import '../../auth/logic/auth_provider.dart';
+import './widgets/writing_prompt_widget.dart';
 
 class TimelineScreen extends ConsumerWidget {
   const TimelineScreen({super.key});
@@ -57,16 +58,16 @@ class TimelineScreen extends ConsumerWidget {
             )
           else if (journalState.entries.isEmpty)
             _buildEmptyState(context)
-          else
+          else ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: const WritingPromptWidget(),
+              ),
+            ),
             _buildEntriesList(context, journalState.entries),
+          ],
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/editor'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Entry'),
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -131,6 +132,11 @@ class TimelineScreen extends ConsumerWidget {
         ),
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.analytics_outlined, color: Colors.white),
+          tooltip: 'AI Insights',
+          onPressed: () => context.push('/insights'),
+        ),
         IconButton(
           icon: const Icon(Icons.logout_rounded, color: Colors.white),
           onPressed: () async {
@@ -268,8 +274,20 @@ class _JournalEntryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
+              if (entry.imageUrls.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    entry.imageUrls.first,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Text(
-                entry.content,
+                entry.content.replaceAll(RegExp(r'\[\[image:(.*?)\]\]'), ''),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context)
                           .textTheme
@@ -281,6 +299,35 @@ class _JournalEntryCard extends StatelessWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (entry.aiReflection != null &&
+                  entry.aiReflection!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome,
+                          size: 14, color: Colors.amber),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          entry.aiReflection!,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.amber[900],
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (entry.moodTag != null || entry.isFavorite) ...[
                 const SizedBox(height: 16),
                 Row(

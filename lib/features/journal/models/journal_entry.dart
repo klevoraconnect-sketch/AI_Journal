@@ -8,6 +8,8 @@ class JournalEntry {
   final List<String> imageUrls;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double? sentimentScore;
+  final String? aiReflection;
 
   JournalEntry({
     required this.id,
@@ -19,6 +21,8 @@ class JournalEntry {
     this.imageUrls = const [],
     required this.createdAt,
     required this.updatedAt,
+    this.sentimentScore,
+    this.aiReflection,
   });
 
   factory JournalEntry.fromMap(Map<String, dynamic> map) {
@@ -32,6 +36,10 @@ class JournalEntry {
       imageUrls: List<String>.from(map['image_urls'] ?? []),
       createdAt: DateTime.parse(map['created_at']),
       updatedAt: DateTime.parse(map['updated_at']),
+      sentimentScore: map['sentiment_score'] != null
+          ? (map['sentiment_score'] as num).toDouble()
+          : null,
+      aiReflection: map['ai_reflection'],
     );
   }
 
@@ -46,6 +54,8 @@ class JournalEntry {
       'image_urls': imageUrls,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'sentiment_score': sentimentScore,
+      'ai_reflection': aiReflection,
     };
   }
 
@@ -56,6 +66,8 @@ class JournalEntry {
     bool? isFavorite,
     List<String>? imageUrls,
     DateTime? updatedAt,
+    double? sentimentScore,
+    String? aiReflection,
   }) {
     return JournalEntry(
       id: id,
@@ -67,6 +79,8 @@ class JournalEntry {
       imageUrls: imageUrls ?? this.imageUrls,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      sentimentScore: sentimentScore ?? this.sentimentScore,
+      aiReflection: aiReflection ?? this.aiReflection,
     );
   }
 }

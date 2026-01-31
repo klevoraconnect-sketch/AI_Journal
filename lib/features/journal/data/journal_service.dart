@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/supabase_config.dart';
@@ -77,6 +78,26 @@ class JournalService {
       await _supabase.from('journal_entries').delete().eq('id', entryId);
     } catch (e) {
       throw Exception('Failed to delete entry: $e');
+    }
+  }
+
+  /// Upload an image to Supabase Storage and return the public URL
+  Future<String> uploadImage(File file) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.png';
+      final path = '$userId/$fileName';
+
+      await _supabase.storage.from('journal-images').upload(path, file);
+
+      final String publicUrl =
+          _supabase.storage.from('journal-images').getPublicUrl(path);
+
+      return publicUrl;
+    } catch (e) {
+      throw Exception('Failed to upload image: $e');
     }
   }
 }

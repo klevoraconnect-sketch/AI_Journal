@@ -6,6 +6,7 @@ import '../../../features/auth/screens/forgot_password_screen.dart';
 import '../../../features/journal/ui/timeline_screen.dart';
 import '../../../features/journal/ui/entry_editor_screen.dart';
 import '../../../features/journal/models/journal_entry.dart';
+import '../../../features/ai_insights/screens/insights_screen.dart';
 import '../../main.dart'; // For AuthWrapper
 
 final GoRouter appRouter = GoRouter(
@@ -41,6 +42,10 @@ final GoRouter appRouter = GoRouter(
         final entry = state.extra as JournalEntry?;
         return EntryEditorScreen(entry: entry);
       },
+    ),
+    GoRoute(
+      path: '/insights',
+      builder: (context, state) => const InsightsScreen(),
     ),
   ],
 );
