@@ -31,7 +31,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _init();
   }
 
-  void _init() {
+  void _init() async {
     // Initial user check
     final user = _authService.currentUserModel;
     state = AuthState(user: user, isLoading: false);

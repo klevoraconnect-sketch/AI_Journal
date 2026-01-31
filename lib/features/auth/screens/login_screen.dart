@@ -34,10 +34,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _passwordController.text,
         );
 
+    if (!mounted) return;
+
     final authState = ref.read(authProvider);
-    if (authState.user != null && mounted) {
+    if (authState.user != null) {
       context.go('/home');
-    } else if (authState.errorMessage != null && mounted) {
+    } else if (authState.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authState.errorMessage!),
@@ -50,10 +52,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleGoogleSignIn() async {
     await ref.read(authProvider.notifier).signInWithGoogle();
 
+    if (!mounted) return;
+
     final authState = ref.read(authProvider);
-    if (authState.user != null && mounted) {
+    if (authState.user != null) {
       context.go('/home');
-    } else if (authState.errorMessage != null && mounted) {
+    } else if (authState.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authState.errorMessage!),

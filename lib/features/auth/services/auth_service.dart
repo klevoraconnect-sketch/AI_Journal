@@ -1,12 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../../config/supabase_config.dart';
-import '../../../core/services/encryption_service.dart';
 import '../models/user_model.dart';
 
 class AuthService {
   final SupabaseClient _supabase = SupabaseConfig.client;
-  final EncryptionService _encryptionService = EncryptionService();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
   );
@@ -56,9 +54,6 @@ class AuthService {
         'updated_at': DateTime.now().toIso8601String(),
       });
 
-      // Initialize encryption key with password
-      await _encryptionService.initializeKey(userPassword: password);
-
       return UserModel(
         id: response.user!.id,
         email: response.user!.email ?? email,
@@ -88,9 +83,6 @@ class AuthService {
       if (response.user == null) {
         throw Exception('Sign in failed');
       }
-
-      // Initialize encryption key with password
-      await _encryptionService.initializeKey(userPassword: password);
 
       return UserModel(
         id: response.user!.id,
@@ -145,9 +137,6 @@ class AuthService {
         'updated_at': DateTime.now().toIso8601String(),
       });
 
-      // Initialize encryption key (random key for OAuth users)
-      await _encryptionService.initializeKey();
-
       return UserModel(
         id: response.user!.id,
         email: response.user!.email ?? '',
@@ -179,9 +168,6 @@ class AuthService {
   /// Sign out
   Future<void> signOut() async {
     try {
-      // Clear encryption key
-      await _encryptionService.clearKey();
-
       // Sign out from Google if signed in
       if (await _googleSignIn.isSignedIn()) {
         await _googleSignIn.signOut();

@@ -3,7 +3,10 @@ import '../../../features/auth/screens/login_screen.dart';
 import '../../../features/auth/screens/signup_screen.dart';
 import '../../../features/auth/screens/onboarding_screen.dart';
 import '../../../features/auth/screens/forgot_password_screen.dart';
-import '../../main.dart'; // For PlaceholderHomeScreen and AuthWrapper
+import '../../../features/journal/ui/timeline_screen.dart';
+import '../../../features/journal/ui/entry_editor_screen.dart';
+import '../../../features/journal/models/journal_entry.dart';
+import '../../main.dart'; // For AuthWrapper
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -30,7 +33,14 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const PlaceholderHomeScreen(),
+      builder: (context, state) => const TimelineScreen(),
+    ),
+    GoRoute(
+      path: '/editor',
+      builder: (context, state) {
+        final entry = state.extra as JournalEntry?;
+        return EntryEditorScreen(entry: entry);
+      },
     ),
   ],
 );
