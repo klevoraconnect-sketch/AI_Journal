@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../logic/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/social_auth_button.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -44,19 +45,19 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.signUp(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      displayName: _nameController.text.trim(),
-    );
+    await ref.read(authProvider.notifier).signUp(
+          _emailController.text.trim(),
+          _passwordController.text,
+          _nameController.text.trim(),
+        );
 
-    if (success && mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
-    } else if (mounted) {
+    final authState = ref.read(authProvider);
+    if (authState.user != null && mounted) {
+      context.go('/home');
+    } else if (authState.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Sign up failed'),
+          content: Text(authState.errorMessage!),
           backgroundColor: Colors.red,
         ),
       );
@@ -64,15 +65,15 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.signInWithGoogle();
+    await ref.read(authProvider.notifier).signInWithGoogle();
 
-    if (success && mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
-    } else if (mounted) {
+    final authState = ref.read(authProvider);
+    if (authState.user != null && mounted) {
+      context.go('/home');
+    } else if (authState.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Google sign in failed'),
+          content: Text(authState.errorMessage!),
           backgroundColor: Colors.red,
         ),
       );
@@ -81,11 +82,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
       ),
       body: SafeArea(
@@ -109,7 +112,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Name Field
                 AuthTextField(
                   controller: _nameController,
@@ -124,7 +127,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Email Field
                 AuthTextField(
                   controller: _emailController,
@@ -144,7 +147,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password Field
                 AuthTextField(
                   controller: _passwordController,
@@ -171,20 +174,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     if (value.length < 8) {
                       return 'Password must be at least 8 characters';
                     }
-                    if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
-                      return 'Password must contain at least one uppercase letter';
-                    }
-                    if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
-                      return 'Password must contain at least one lowercase letter';
-                    }
-                    if (!RegExp(r'(?=.*\d)').hasMatch(value)) {
-                      return 'Password must contain at least one number';
-                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Confirm Password Field
                 AuthTextField(
                   controller: _confirmPasswordController,
@@ -215,7 +209,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Terms and Conditions
                 Row(
                   children: [
@@ -254,19 +248,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Sign Up Button
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    return AuthButton(
-                      text: 'Sign Up',
-                      onPressed: _handleSignup,
-                      isLoading: authProvider.isLoading,
-                    );
-                  },
+                AuthButton(
+                  text: 'Sign Up',
+                  onPressed: _handleSignup,
+                  isLoading: authState.isLoading,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Divider
                 Row(
                   children: [
@@ -282,7 +272,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Google Sign In
                 SocialAuthButton(
                   text: 'Continue with Google',
@@ -290,7 +280,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   onPressed: _handleGoogleSignIn,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Sign In Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -300,7 +290,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => context.pop(),
                       child: const Text('Sign In'),
                     ),
                   ],

@@ -25,9 +25,8 @@ class AuthService {
       displayName: user.userMetadata?['display_name'] as String?,
       photoUrl: user.userMetadata?['photo_url'] as String?,
       createdAt: DateTime.parse(user.createdAt),
-      lastLoginAt: user.lastSignInAt != null
-          ? DateTime.parse(user.lastSignInAt!)
-          : null,
+      lastLoginAt:
+          user.lastSignInAt != null ? DateTime.parse(user.lastSignInAt!) : null,
     );
   }
 
@@ -49,6 +48,13 @@ class AuthService {
       if (response.user == null) {
         throw Exception('Sign up failed');
       }
+
+      // Create profile record
+      await _supabase.from('profiles').upsert({
+        'id': response.user!.id,
+        'full_name': displayName,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
 
       // Initialize encryption key with password
       await _encryptionService.initializeKey(userPassword: password);
@@ -130,6 +136,14 @@ class AuthService {
       if (response.user == null) {
         throw Exception('Google sign in failed');
       }
+
+      // Ensure profile record exists for Google users
+      await _supabase.from('profiles').upsert({
+        'id': response.user!.id,
+        'full_name': googleUser.displayName,
+        'avatar_url': googleUser.photoUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
 
       // Initialize encryption key (random key for OAuth users)
       await _encryptionService.initializeKey();

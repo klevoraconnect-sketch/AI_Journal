@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../logic/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/auth_button.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _emailSent = false;
@@ -25,19 +27,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _handleResetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.resetPassword(
-      _emailController.text.trim(),
-    );
+    await ref.read(authProvider.notifier).resetPassword(
+          _emailController.text.trim(),
+        );
 
-    if (success && mounted) {
+    final authState = ref.read(authProvider);
+    if (authState.errorMessage == null && mounted) {
       setState(() {
         _emailSent = true;
       });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Failed to send reset email'),
+          content: Text(authState.errorMessage ?? 'Failed to send reset email'),
           backgroundColor: Colors.red,
         ),
       );
@@ -50,7 +52,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
       ),
       body: SafeArea(
@@ -63,13 +65,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildFormView() {
+    final authState = ref.watch(authProvider);
+
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 40),
-          
+
           // Icon
           Icon(
             Icons.lock_reset,
@@ -77,7 +81,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             color: Theme.of(context).primaryColor,
           ),
           const SizedBox(height: 24),
-          
+
           // Header
           Text(
             'Forgot Password?',
@@ -91,7 +95,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 40),
-          
+
           // Email Field
           AuthTextField(
             controller: _emailController,
@@ -111,16 +115,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             },
           ),
           const SizedBox(height: 32),
-          
+
           // Reset Button
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              return AuthButton(
-                text: 'Send Reset Link',
-                onPressed: _handleResetPassword,
-                isLoading: authProvider.isLoading,
-              );
-            },
+          AuthButton(
+            text: 'Send Reset Link',
+            onPressed: _handleResetPassword,
+            isLoading: authState.isLoading,
           ),
         ],
       ),
@@ -132,7 +132,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 60),
-        
+
         // Success Icon
         Icon(
           Icons.mark_email_read,
@@ -140,7 +140,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           color: Theme.of(context).colorScheme.secondary,
         ),
         const SizedBox(height: 32),
-        
+
         // Success Message
         Text(
           'Check Your Email',
@@ -154,14 +154,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
-        
+
         // Back to Login Button
         AuthButton(
           text: 'Back to Login',
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
         const SizedBox(height: 16),
-        
+
         // Resend Link
         TextButton(
           onPressed: () {

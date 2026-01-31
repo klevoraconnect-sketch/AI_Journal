@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'core/router/app_router.dart';
 import 'config/supabase_config.dart';
 import 'config/theme_config.dart';
-import 'features/auth/providers/auth_provider.dart';
-import 'features/auth/screens/onboarding_screen.dart';
+import 'features/auth/logic/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/auth/screens/signup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,59 +13,59 @@ void main() async {
   // Initialize Supabase
   await SupabaseConfig.initialize();
 
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: MaterialApp(
-        title: 'AI Journal',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeConfig.lightTheme,
-        darkTheme: ThemeConfig.darkTheme,
-        themeMode: ThemeMode.system,
-        home: const AuthWrapper(),
-        routes: {
-          '/onboarding': (context) => const OnboardingScreen(),
-          '/login': (context) => const LoginScreen(),
-          '/signup': (context) => const SignupScreen(),
-          '/home': (context) => const PlaceholderHomeScreen(),
-        },
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp.router(
+      title: 'AI Journal',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeConfig.lightTheme,
+      darkTheme: ThemeConfig.darkTheme,
+      themeMode: ThemeMode.system,
+      routerConfig: appRouter,
     );
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        if (authProvider.isAuthenticated) {
-          return const PlaceholderHomeScreen();
-        } else {
-          return const OnboardingScreen();
-        }
-      },
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
+    if (authState.isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (authState.user != null) {
+      return const PlaceholderHomeScreen();
+    }
+
+    return const LoginScreen();
   }
 }
 
 // Placeholder home screen for Phase 1
-class PlaceholderHomeScreen extends StatelessWidget {
+class PlaceholderHomeScreen extends ConsumerWidget {
   const PlaceholderHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI Journal'),
@@ -73,10 +73,9 @@ class PlaceholderHomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              final authProvider = context.read<AuthProvider>();
-              await authProvider.signOut();
+              await ref.read(authProvider.notifier).signOut();
               if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
+                context.go('/login');
               }
             },
           ),
@@ -87,7 +86,7 @@ class PlaceholderHomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.check_circle_outline,
+              Icons.book_outlined,
               size: 100,
               color: Theme.of(context).primaryColor,
             ),
@@ -97,14 +96,18 @@ class PlaceholderHomeScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 16),
-            Consumer<AuthProvider>(
-              builder: (context, authProvider, child) {
-                return Text(
-                  'Welcome, ${authProvider.currentUser?.displayName ?? authProvider.currentUser?.email ?? "User"}!',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                );
-              },
+            Text(
+              'Welcome, ${user?.email ?? "User"}!',
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
+            if (authState.errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  authState.errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
             const SizedBox(height: 32),
             const Padding(
               padding: EdgeInsets.all(24.0),

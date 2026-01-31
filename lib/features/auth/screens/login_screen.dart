@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../logic/auth_provider.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/social_auth_button.dart';
-import 'signup_screen.dart';
-import 'forgot_password_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -30,18 +29,18 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+    await ref.read(authProvider.notifier).signIn(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
 
-    if (success && mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
-    } else if (mounted) {
+    final authState = ref.read(authProvider);
+    if (authState.user != null && mounted) {
+      context.go('/home');
+    } else if (authState.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Login failed'),
+          content: Text(authState.errorMessage!),
           backgroundColor: Colors.red,
         ),
       );
@@ -49,15 +48,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    final authProvider = context.read<AuthProvider>();
-    final success = await authProvider.signInWithGoogle();
+    await ref.read(authProvider.notifier).signInWithGoogle();
 
-    if (success && mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
-    } else if (mounted) {
+    final authState = ref.read(authProvider);
+    if (authState.user != null && mounted) {
+      context.go('/home');
+    } else if (authState.errorMessage != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Google sign in failed'),
+          content: Text(authState.errorMessage!),
           backgroundColor: Colors.red,
         ),
       );
@@ -66,6 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -76,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 60),
-                
+
                 // App Logo/Icon
                 Icon(
                   Icons.book_rounded,
@@ -84,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: Theme.of(context).primaryColor,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Welcome Text
                 Text(
                   'Welcome Back',
@@ -98,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 48),
-                
+
                 // Email Field
                 AuthTextField(
                   controller: _emailController,
@@ -118,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password Field
                 AuthTextField(
                   controller: _passwordController,
@@ -146,36 +147,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Forgot Password
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ForgotPasswordScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: () => context.push('/forgot-password'),
                     child: const Text('Forgot Password?'),
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Login Button
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    return AuthButton(
-                      text: 'Sign In',
-                      onPressed: _handleLogin,
-                      isLoading: authProvider.isLoading,
-                    );
-                  },
+                AuthButton(
+                  text: 'Sign In',
+                  onPressed: _handleLogin,
+                  isLoading: authState.isLoading,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Divider
                 Row(
                   children: [
@@ -191,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Google Sign In
                 SocialAuthButton(
                   text: 'Continue with Google',
@@ -199,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _handleGoogleSignIn,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Sign Up Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -209,14 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SignupScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: () => context.push('/signup'),
                       child: const Text('Sign Up'),
                     ),
                   ],
