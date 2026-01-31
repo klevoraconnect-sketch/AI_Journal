@@ -1,16 +1,16 @@
 # AI Journal App - Task Breakdown
 
 ## Stage 1: Authentication & Foundation
-- [ ] Set up Supabase project and configuration
-- [ ] Implement login page UI
-- [ ] Implement signup page UI
-- [ ] Integrate Supabase authentication
-- [ ] Add email/password authentication
-- [ ] Add Google OAuth authentication
-- [ ] Implement password reset functionality
-- [ ] Create onboarding flow
-- [ ] Set up encrypted local storage for sensitive data
-- [ ] Implement secure token management
+- [x] Set up Supabase project and configuration
+- [x] Implement login page UI
+- [x] Implement signup page UI
+- [x] Integrate Supabase authentication
+- [x] Add email/password authentication
+- [x] Add Google OAuth authentication
+- [x] Implement password reset functionality
+- [x] Create onboarding flow
+- [x] Set up encrypted local storage for sensitive data
+- [x] Implement secure token management
 
 ## Stage 2: Core Journaling Features
 - [ ] Design and implement journal entry UI
